@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$INDEX Rewards Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg-primary: #000000; /* Pure black */
+            --color-card-bg: rgba(26, 26, 26, 0.9); /* Slightly transparent dark */
+            --color-accent-gold: #FFD700; /* Bright Gold */
+            --color-dark-gold: #B8860B; /* Darker Gold */
+            --color-text-light: #E0E0E0; /* Light text */
+            --color-text-dark: #1A1A1A; /* Dark text for gold buttons */
+            --color-border-dark: #333; /* Subtle dark border */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden; /* Hide overflow from floating wolves */
+            position: relative; /* For positioning wolf emojis */
+        }
+
+        .container {
+            max-width: 500px; /* Adjusted max-width for better fit */
+            width: 100%;
+        }
+
+        .calculator-card {
+            background-color: var(--color-card-bg);
+            border-radius: 1.5rem; /* More rounded corners */
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); /* Stronger shadow */
+            border: 1px solid rgba(184, 134, 11, 0.5); /* Golden border */
+            z-index: 10; /* Ensure calculator is above wolves */
+            position: relative;
+        }
+
+        .text-accent-gold {
+            color: var(--color-accent-gold);
+        }
+
+        .calculator-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background-color: #1A1A1A; /* Darker input background */
+            border: 1px solid var(--color-dark-gold); /* Darker gold input border */
+            border-radius: 0.75rem; /* Rounded input fields */
+            color: #FFFFFF; /* White text in input */
+            font-size: 1rem;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            -moz-appearance: textfield; /* Hide arrows for Firefox */
+        }
+        .calculator-input::-webkit-outer-spin-button,
+        .calculator-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .calculator-input:focus {
+            outline: none;
+            border-color: var(--color-accent-gold); /* Bright gold accent on focus */
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--color-dark-gold), var(--color-accent-gold)); /* Darker gold to bright gold gradient */
+            color: var(--color-text-dark); /* Dark text on gold button */
+            font-weight: 700; /* Bolder text */
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1.125rem;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+            filter: brightness(1.1); /* Slightly brighter on hover */
+        }
+
+        .calculator-button {
+            padding: 0.75rem 1rem;
+            background-color: #333; /* Dark gray for inactive buttons */
+            border: 1px solid #555;
+            border-radius: 0.75rem;
+            color: var(--color-text-light);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .calculator-button:hover {
+            background-color: #444;
+            border-color: var(--color-dark-gold);
+        }
+        .calculator-button.active {
+            background: linear-gradient(90deg, var(--color-dark-gold), var(--color-accent-gold));
+            color: var(--color-text-dark);
+            border-color: var(--color-accent-gold);
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+
+        .calculator-checkbox {
+            /* Custom checkbox styling */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--color-dark-gold);
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: #1A1A1A;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .calculator-checkbox:checked {
+            background-color: var(--color-accent-gold);
+            border-color: var(--color-accent-gold);
+        }
+        .calculator-checkbox:checked::after {
+            content: '✔';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-text-dark);
+            font-size: 0.8rem;
+        }
+        .calculator-checkbox:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #333;
+            border-color: #555;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            color: var(--color-text-light);
+        }
+        .result-label {
+            font-weight: 500;
+            color: var(--color-accent-gold); /* Gold for result labels */
+        }
+        .result-value {
+            font-weight: 700; /* Bolder for values */
+            color: var(--color-accent-gold); /* Bright gold for values */
+        }
+        .error-message {
+            color: #FF6347; /* Tomato red for errors */
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .contract-address {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+            word-break: break-all; /* Ensures long address wraps */
+        }
+        .contract-address span {
+            color: var(--color-accent-gold); /* Gold for contract address value */
+            font-weight: 500;
+        }
+
+        /* Floating Wolf Emojis */
+        .wolf-emoji {
+            position: absolute;
+            font-size: 3rem; /* Larger emojis */
+            opacity: 0.5; /* Increased visibility further */
+            animation: float 25s ease-in-out infinite; /* Increased animation duration for slower, smoother movement */
+            pointer-events: none; /* Allow clicks through them */
+            z-index: 0; /* Behind the calculator */
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.4); /* Subtle glow */
+        }
+
+        /* Adjusted float animation to include rotation */
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(20px, -30px) rotate(10deg); }
+            40% { transform: translate(-20px, 10px) rotate(-15deg); }
+            60% { transform: translate(15px, 40px) rotate(5deg); }
+            80% { transform: translate(-10px, -20px) rotate(-10deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        /* Individual wolf positioning and animation delays and rotation */
+        .wolf-1 { top: 8%; left: 3%; animation-duration: 22s; animation-delay: 0s; transform: rotate(5deg); }
+        .wolf-2 { top: 28%; right: 8%; animation-duration: 18s; animation-delay: 2s; transform: rotate(18deg); }
+        .wolf-3 { bottom: 18%; left: 12%; animation-duration: 25s; animation-delay: 4s; transform: rotate(-12deg); }
+        .wolf-4 { top: 3%; right: 22%; animation-duration: 20s; animation-delay: 6s; transform: rotate(8deg); }
+        .wolf-5 { bottom: 8%; right: 3%; animation-duration: 23s; animation-delay: 8s; transform: rotate(-10deg); }
+        .wolf-6 { top: 48%; left: 1%; animation-duration: 17s; animation-delay: 1s; transform: rotate(22deg); }
+        .wolf-7 { bottom: 3%; left: 38%; animation-duration: 26s; animation-delay: 3s; transform: rotate(-15deg); }
+        .wolf-8 { top: 18%; left: 38%; animation-duration: 19s; animation-delay: 5s; transform: rotate(10deg); }
+        .wolf-9 { bottom: 28%; right: 28%; animation-duration: 24s; animation-delay: 7s; transform: rotate(-18deg); }
+        .wolf-10 { top: 68%; right: 12%; animation-duration: 21s; animation-delay: 9s; transform: rotate(13deg); }
+
+        /* Additional Emojis - more varied initial positions */
+        .wolf-11 { top: 43%; left: 8%; animation-duration: 20s; animation-delay: 0.5s; transform: rotate(-7deg); }
+        .wolf-12 { bottom: 43%; right: 8%; animation-duration: 23s; animation-delay: 2.5s; transform: rotate(15deg); }
+        .wolf-13 { top: 13%; left: 28%; animation-duration: 18s; animation-delay: 4.5s; transform: rotate(-10deg); }
+        .wolf-14 { bottom: 13%; right: 38%; animation-duration: 27s; animation-delay: 6.5s; transform: rotate(20deg); }
+        .wolf-15 { top: 58%; left: 23%; animation-duration: 17s; animation-delay: 8.5s; transform: rotate(-12deg); }
+        .wolf-16 { top: 3%; left: 68%; animation-duration: 24s; animation-delay: 1s; transform: rotate(28deg); }
+        .wolf-17 { bottom: 3%; right: 68%; animation-duration: 22s; animation-delay: 3s; transform: rotate(-22deg); }
+        .wolf-18 { top: 78%; left: 48%; animation-duration: 20s; animation-delay: 5s; transform: rotate(17deg); }
+        .wolf-19 { bottom: 78%; left: 48%; animation-duration: 23s; animation-delay: 7s; transform: rotate(-12deg); }
+        .wolf-20 { top: 23%; right: 3%; animation-duration: 26s; animation-delay: 9s; transform: rotate(10deg); }
+        .wolf-21 { top: 68%; left: 3%; animation-duration: 18s; animation-delay: 0.2s; transform: rotate(-9deg); }
+        .wolf-22 { bottom: 23%; left: 68%; animation-duration: 25s; animation-delay: 2.2s; transform: rotate(12deg); }
+        .wolf-23 { top: 33%; right: 28%; animation-duration: 20s; animation-delay: 4.2s; transform: rotate(-15deg); }
+        .wolf-24 { bottom: 33%; left: 28%; animation-duration: 23s; animation-delay: 6.2s; transform: rotate(8deg); }
+        .wolf-25 { top: 53%; right: 23%; animation-duration: 26s; animation-delay: 8.2s; transform: rotate(-11deg); }
+        .wolf-26 { top: 8%; left: 88%; animation-duration: 22s; animation-delay: 0.7s; transform: rotate(16deg); }
+        .wolf-27 { bottom: 8%; right: 88%; animation-duration: 18s; animation-delay: 2.7s; transform: rotate(-13deg); }
+        .wolf-28 { top: 18%; left: 78%; animation-duration: 25s; animation-delay: 4.7s; transform: rotate(5deg); }
+        .wolf-29 { bottom: 18%; right: 78%; animation-duration: 20s; animation-delay: 6.7s; transform: rotate(-18deg); }
+        .wolf-30 { top: 28%; left: 83%; animation-duration: 23s; animation-delay: 8.7s; transform: rotate(11deg); }
+        .wolf-31 { bottom: 73%; left: 18%; animation-duration: 17s; animation-delay: 1.5s; transform: rotate(-6deg); }
+        .wolf-32 { top: 73%; right: 18%; animation-duration: 26s; animation-delay: 3.5s; transform: rotate(15deg); }
+        .wolf-33 { bottom: 3%; left: 58%; animation-duration: 19s; animation-delay: 5.5s; transform: rotate(-9deg); }
+        .wolf-34 { top: 3%; right: 58%; animation-duration: 22s; animation-delay: 7.5s; transform: rotate(12deg); }
+        .wolf-35 { bottom: 63%; left: 38%; animation-duration: 25s; animation-delay: 9.5s; transform: rotate(-16deg); }
+        .wolf-36 { top: 18%; left: 73%; animation-duration: 19s; animation-delay: 1.2s; transform: rotate(8deg); }
+        .wolf-37 { bottom: 18%; right: 73%; animation-duration: 24s; animation-delay: 3.2s; transform: rotate(-11deg); }
+        .wolf-38 { top: 38%; left: 53%; animation-duration: 17s; animation-delay: 5.2s; transform: rotate(13deg); }
+        .wolf-39 { bottom: 38%; right: 53%; animation-duration: 21s; animation-delay: 7.2s; transform: rotate(-7deg); }
+        .wolf-40 { top: 58%; left: 68%; animation-duration: 26s; animation-delay: 9.2s; transform: rotate(18deg); }
+        .wolf-41 { bottom: 48%; left: 3%; animation-duration: 18s; animation-delay: 0.8s; transform: rotate(-15deg); }
+        .wolf-42 { top: 48%; right: 3%; animation-duration: 22s; animation-delay: 2.8s; transform: rotate(9deg); }
+        .wolf-43 { bottom: 68%; left: 28%; animation-duration: 20s; animation-delay: 4.8s; transform: rotate(-6deg); }
+        .wolf-44 { top: 68%; right: 28%; animation-duration: 25s; animation-delay: 6.8s; transform: rotate(12deg); }
+        .wolf-45 { bottom: 28%; left: 78%; animation-duration: 17s; animation-delay: 8.8s; transform: rotate(-13deg); }
+    </style>
+</head>
+<body>
+    <!-- Floating Wolf Emojis -->
+    <div class="wolf-emoji wolf-1">🐺</div>
+    <div class="wolf-emoji wolf-2">🐺</div>
+    <div class="wolf-emoji wolf-3">🐺</div>
+    <div class="wolf-emoji wolf-4">🐺</div>
+    <div class="wolf-emoji wolf-5">🐺</div>
+    <div class="wolf-emoji wolf-6">🐺</div>
+    <div class="wolf-emoji wolf-7">🐺</div>
+    <div class="wolf-emoji wolf-8">🐺</div>
+    <div class="wolf-emoji wolf-9">🐺</div>
+    <div class="wolf-emoji wolf-10">🐺</div>
+    <div class="wolf-emoji wolf-11">🐺</div>
+    <div class="wolf-emoji wolf-12">🐺</div>
+    <div class="wolf-emoji wolf-13">🐺</div>
+    <div class="wolf-emoji wolf-14">🐺</div>
+    <div class="wolf-emoji wolf-15">🐺</div>
+    <div class="wolf-emoji wolf-16">🐺</div>
+    <div class="wolf-emoji wolf-17">🐺</div>
+    <div class="wolf-emoji wolf-18">🐺</div>
+    <div class="wolf-emoji wolf-19">🐺</div>
+    <div class="wolf-emoji wolf-20">🐺</div>
+    <div class="wolf-emoji wolf-21">🐺</div>
+    <div class="wolf-emoji wolf-22">🐺</div>
+    <div class="wolf-emoji wolf-23">🐺</div>
+    <div class="wolf-emoji wolf-24">🐺</div>
+    <div class="wolf-emoji wolf-25">🐺</div>
+    <div class="wolf-emoji wolf-26">🐺</div>
+    <div class="wolf-emoji wolf-27">🐺</div>
+    <div class="wolf-emoji wolf-28">🐺</div>
+    <div class="wolf-emoji wolf-29">🐺</div>
+    <div class="wolf-emoji wolf-30">🐺</div>
+    <div class="wolf-emoji wolf-31">🐺</div>
+    <div class="wolf-emoji wolf-32">🐺</div>
+    <div class="wolf-emoji wolf-33">🐺</div>
+    <div class="wolf-emoji wolf-34">🐺</div>
+    <div class="wolf-emoji wolf-35">🐺</div>
+    <div class="wolf-emoji wolf-36">🐺</div>
+    <div class="wolf-emoji wolf-37">🐺</div>
+    <div class="wolf-emoji wolf-38">🐺</div>
+    <div class="wolf-emoji wolf-39">🐺</div>
+    <div class="wolf-emoji wolf-40">🐺</div>
+    <div class="wolf-emoji wolf-41">🐺</div>
+    <div class="wolf-emoji wolf-42">🐺</div>
+    <div class="wolf-emoji wolf-43">🐺</div>
+    <div class="wolf-emoji wolf-44">🐺</div>
+    <div class="wolf-emoji wolf-45">🐺</div>
+
+    <!-- Rewards Calculator Section -->
+    <section id="calculator" class="py-16 text-center" style="background-color: var(--color-bg-primary);">
+        <div class="container mx-auto px-4">
+            <h2 class="text-5xl font-extrabold mb-12 text-accent-gold">Rewards Calculator</h2>
+            <div class="calculator-card text-left">
+                <p class="text-xl text-accent-gold mb-6">Estimate your $INDEX rewards!</p>
+
+                <!-- Your Holdings -->
+                <div class="mb-6">
+                    <h3 class="text-2xl font-bold text-accent-gold mb-2">YOUR HOLDINGS</h3>
+                    <div class="flex items-center space-x-4">
+                        <input type="number" id="holdings" class="calculator-input flex-grow" placeholder="Enter amount of tokens" value="100000">
+                        <!-- MAX button functionality is not implemented as total supply/user balance is unknown -->
+                        <button id="maxTokensBtn" class="btn-primary py-2 px-4 text-base opacity-50 cursor-not-allowed" disabled>MAX</button>
+                    </div>
+                </div>
+
+                <!-- Volume Projection -->
+                <div class="mb-6">
+                    <h3 class="text-2xl font-bold text-accent-gold mb-2">DAILY VOLUME PROJECTION (USD)</h3>
+                    <div class="flex flex-col space-y-3">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="customVolumeCheckbox" class="calculator-checkbox" checked disabled>
+                            <span class="ml-2 text-lg text-white">Custom Daily Volume (Buy + Sell)</span>
+                        </label>
+                        <input type="number" id="dailyVolumeCombined" class="calculator-input" placeholder="Enter combined daily volume (USD)" value="100000">
+                    </div>
+                </div>
+
+                <!-- Timeframe -->
+                <div class="mb-6">
+                    <h3 class="text-2xl font-bold text-accent-gold mb-2">TIMEFRAME</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                        <button class="calculator-button timeframe-btn active" data-timeframe="1">1 HOUR</button>
+                        <button class="calculator-button timeframe-btn" data-timeframe="24">1 DAY</button>
+                        <button class="calculator-button timeframe-btn" data-timeframe="168">1 WEEK</button>
+                        <button class="calculator-button timeframe-btn" data-timeframe="720">1 MONTH</button>
+                        <button class="calculator-button timeframe-btn" data-timeframe="8760">1 YEAR</button>
+                    </div>
+                </div>
+
+                <!-- Estimated Rewards -->
+                <div class="mt-8 pt-6 border-t border-yellow-700">
+                    <div class="result-item">
+                        <span class="result-label">⏱️ Timeframe:</span>
+                        <span id="displayTimeframe" class="text-white">1 HOUR</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">💰 Estimated Rewards:</span>
+                        <span id="estimatedRewards" class="text-white">= 0.00 of SOL ($0.00)</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">📈 Daily SOL Earnings:</span>
+                        <span id="dailySolEarnings" class="text-white">+ 0.00 of SOL per day ($0.00)</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Daily Rewards (from Tax):</span>
+                        <span id="dailyTaxRewards" class="text-white">0.00 SOL ($0.00)</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Daily Rewards (from APY):</span>
+                        <span id="dailyApyRewards" class="text-white">0.00 SOL ($0.00)</span>
+                    </div>
+                </div>
+
+                <p class="text-sm text-gray-400 mt-6">
+                    *Calculations are estimates based on current parameters and do not guarantee future results.
+                </p>
+                <p class="contract-address">
+                    Contract Address (CA): <span id="contractAddress">easchojrygsnpfwzskc4avpsnuseumqzlhlyztzdmgf</span>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const holdingsInput = document.getElementById('holdings');
+            const dailyVolumeCombinedInput = document.getElementById('dailyVolumeCombined');
+
+            const timeframeButtons = Array.from(document.querySelectorAll('.timeframe-btn'));
+            const displayTimeframe = document.getElementById('displayTimeframe');
+            const estimatedRewardsSpan = document.getElementById('estimatedRewards');
+            const dailySolEarningsSpan = document.getElementById('dailySolEarnings');
+            const dailyTaxRewardsSpan = document.getElementById('dailyTaxRewards');
+            const dailyApyRewardsSpan = document.getElementById('dailyApyRewards');
+
+            // Fixed values as per your instruction - these are not user editable
+            const INDEX_PRICE_USD = 0.0001; // Fixed $INDEX price
+            const TAX_PERCENTAGE = 3; // 3% tax on total volume
+            const YOUR_SHARE_OF_TAX_POOL = 0.1; // 0.1% share of tax pool
+            const APY = 300; // 300% Annual Percentage Yield
+            const SOL_PRICE_USD = 150; // Fixed SOL price in USD
+
+            let selectedTimeframeHours = 1; // Default to 1 hour
+
+            // Function to format numbers for SOL and USD
+            const formatSolAndUsd = (solValue, usdValue) => {
+                const formattedSol = new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 8
+                }).format(solValue);
+                const formattedUsd = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(usdValue);
+                return `${formattedSol} of SOL (${formattedUsd})`;
+            };
+
+            // Function to format only SOL value
+            const formatSol = (solValue, usdValue) => {
+                const formattedSol = new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 8
+                }).format(solValue);
+                const formattedUsd = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(usdValue);
+                return `${formattedSol} SOL (${formattedUsd})`;
+            };
+
+
+            function updateCalculator() {
+                const holdings = parseFloat(holdingsInput.value) || 0;
+                const dailyVolumeCombined = parseFloat(dailyVolumeCombinedInput.value) || 0;
+
+                // Basic validation for user inputs
+                if (isNaN(holdings) || isNaN(dailyVolumeCombined) ||
+                    holdings < 0 || dailyVolumeCombined < 0) {
+                    // Reset display if inputs are invalid
+                    dailyTaxRewardsSpan.textContent = formatSol(0, 0);
+                    dailyApyRewardsSpan.textContent = formatSol(0, 0);
+                    dailySolEarningsSpan.textContent = `+ ${formatSolAndUsd(0, 0)} per day`;
+                    estimatedRewardsSpan.textContent = `= ${formatSolAndUsd(0, 0)}`;
+                    return;
+                }
+
+                // --- Calculate Rewards from Tax Volume (in USD) ---
+                const totalDailyTaxCollectedUSD = dailyVolumeCombined * (TAX_PERCENTAGE / 100);
+                const dailyRewardFromTaxUSD = totalDailyTaxCollectedUSD * (YOUR_SHARE_OF_TAX_POOL / 100);
+
+                // --- Calculate Rewards from APY (in USD) ---
+                const initialInvestmentUSD = holdings * INDEX_PRICE_USD;
+                const dailyApyRate = (APY / 100) / 365; // Convert annual APY to daily rate
+                const dailyRewardFromApyUSD = initialInvestmentUSD * dailyApyRate;
+
+                // --- Total Daily Rewards (in USD) ---
+                const totalDailyRewardUSD = dailyRewardFromTaxUSD + dailyRewardFromApyUSD;
+
+                // --- Convert all USD rewards to SOL ---
+                const dailyRewardFromTaxSOL = dailyRewardFromTaxUSD / SOL_PRICE_USD;
+                const dailyRewardFromApySOL = dailyRewardFromApyUSD / SOL_PRICE_USD;
+                const totalDailyRewardSOL = totalDailyRewardUSD / SOL_PRICE_USD;
+
+                // --- Estimated Rewards for selected timeframe (in SOL and USD) ---
+                const estimatedRewardsForTimeframeSOL = totalDailyRewardSOL * (selectedTimeframeHours / 24);
+                const estimatedRewardsForTimeframeUSD = estimatedRewardsForTimeframeSOL * SOL_PRICE_USD;
+
+
+                // Update display
+                displayTimeframe.textContent = timeframeButtons.find(btn => btn.classList.contains('active')).textContent;
+                estimatedRewardsSpan.textContent = `= ${formatSolAndUsd(estimatedRewardsForTimeframeSOL, estimatedRewardsForTimeframeUSD)}`;
+                dailySolEarningsSpan.textContent = `+ ${formatSolAndUsd(totalDailyRewardSOL, totalDailyRewardUSD)} per day`;
+                dailyTaxRewardsSpan.textContent = formatSol(dailyRewardFromTaxSOL, dailyRewardFromTaxUSD);
+                dailyApyRewardsSpan.textContent = formatSol(dailyRewardFromApySOL, dailyRewardFromApyUSD);
+            }
+
+            // Event Listeners
+
+            // Input fields
+            holdingsInput.addEventListener('input', updateCalculator);
+            dailyVolumeCombinedInput.addEventListener('input', updateCalculator);
+
+            // Timeframe Buttons
+            timeframeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    timeframeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    selectedTimeframeHours = parseInt(button.dataset.timeframe);
+                    updateCalculator();
+                });
+            });
+
+            // Initial calculation on page load
+            updateCalculator();
+        });
+    </script>
+</body>
+</html>
