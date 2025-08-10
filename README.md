@@ -1,0 +1,2 @@
+# indexcalculator
+Calculator for INDEX
